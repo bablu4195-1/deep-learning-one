@@ -1,14 +1,23 @@
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 import tensorflow as tf
 import numpy as np
 from PIL import Image
 import io
+import os
 
 app = FastAPI()
 
 # Load the pre-trained model
 model = tf.keras.models.load_model('my_digit_reader.keras')
+
+# Create the frontend directory if it doesn't exist
+os.makedirs("frontend", exist_ok=True)
+
+# Mount the frontend directory
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
+
 
 @app.post("/predict/")
 async def predict(file: UploadFile = File(...)):
@@ -37,3 +46,8 @@ async def predict(file: UploadFile = File(...)):
 
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
+
+# Serve the index.html file at the root
+@app.get("/")
+async def read_index():
+    return FileResponse('frontend/index.html')
